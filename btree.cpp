@@ -16,10 +16,7 @@ struct Node {
     keyT key[M] = {};
     Node *ptr[M + 1] = {};
 
-    Node(): cnt(0), parent(nullptr) {
-        // memset(key, 0, sizeof(key));
-        // memset(ptr, 0, sizeof(ptr));
-    }
+    Node(): cnt(0), parent(nullptr) {}
 };
 
 Node *BTree = nullptr;
