@@ -15,7 +15,7 @@ struct Node {
     Node *parent;
     // 多出一个空间，方便在满元素的情况下先找好顺序再分裂
     keyT key[M + 1] = {};
-    Node *ptr[M + 1] = {};
+    Node *ptr[M + 2] = {};
 
     Node(): cnt(0), parent(nullptr) {}
 };
@@ -61,6 +61,11 @@ int insert_key_in_order(keyT item, Node *&node) {
         for (unsigned int j = node -> cnt; j > i; --j) {
             node -> key[j] = node -> key[j - 1];
         }
+        printf("move ptr\n");
+        for (unsigned int j = node -> cnt + 1; j > i; --j) {
+            node -> key[j] = node -> key[j - 1];
+        }
+        fflush(stdout);
     }
     node ->key[i] = item;
     return i;
@@ -138,6 +143,7 @@ int insert(keyT item, Node *&node, bool up = false) {
             right -> key[i] = node -> key[mid];
             right -> ptr[i] = node -> ptr[mid];
         }
+        right -> ptr[i] = node -> ptr[mid];
         right -> cnt = M >> 1;
         printf("node: %d - ", right -> cnt);
         for (unsigned int i = 0; i < right ->cnt; ++i) {
