@@ -32,9 +32,10 @@ void showNode(Node *&node, unsigned int level = 0) {
         cout << node -> ptr[i] << ' ';
     }
     fflush(stdout);
-    printf("- LEVEL%d\n", level);
+    putchar(10);
+    // printf("- LEVEL%d\n", level);
     for (unsigned int i = 0; node -> ptr[i] && i <= node -> cnt; ++i) {
-        printf("----- %d ------\n", i);
+        printf("----- LEVEL%d ------\n", level);
         showNode(node -> ptr[i], level + 1);
     }
 }
@@ -63,7 +64,7 @@ int insert_key_in_order(keyT item, Node *&node) {
         }
         printf("move ptr\n");
         for (unsigned int j = node -> cnt + 1; j > i; --j) {
-            node -> key[j] = node -> key[j - 1];
+            node -> ptr[j] = node -> ptr[j - 1];
         }
         fflush(stdout);
     }
@@ -128,7 +129,7 @@ int insert(keyT item, Node *&node, bool up = false) {
         // 把中间元素放到 parent 中
         // 在这里，父节点中插入了新的元素，其 cnt 已经加 1，可以直接连接 right
         int posInParent = insert(node -> key[mid], node ->parent, true);
-        printf("address = %p, pos = %d\n", node, posInParent);
+        printf("address = %p, pos = %d\n", (void*)node, posInParent);
         fflush(stdout);
         // showNode(node);
         // cout << BTree -> ptr[1] << BTree -> ptr[0] << endl;
@@ -139,7 +140,8 @@ int insert(keyT item, Node *&node, bool up = false) {
         fflush(stdout);
         // 右半边写到右边元素
         ++mid;
-        for (int i = 0; mid <= node -> cnt; ++mid, ++i) {
+        int i = 0;
+        for (; mid <= node -> cnt; ++mid, ++i) {
             right -> key[i] = node -> key[mid];
             right -> ptr[i] = node -> ptr[mid];
         }
@@ -152,8 +154,8 @@ int insert(keyT item, Node *&node, bool up = false) {
         printf("- %p\n", (void*)right);
         // 重新设置 cnt 为 一半
         node -> cnt = M >> 1;
-        printf("address = %p, cnt = %d\n", node, node -> cnt);
-        printf("address = %p, cnt = %d\n", right, right -> cnt);
+        printf("address = %p, cnt = %d\n", (void*)node, node -> cnt);
+        printf("address = %p, cnt = %d\n", (void*)right, right -> cnt);
         // 最后 根节点指针指向 新的父节点
         if (!node -> parent -> parent) {
             BTree = node -> parent;
@@ -226,9 +228,9 @@ int insertTest() {
     const char *str = "CNGAHEKQMFWLTZDPRXYS";
     for (int i = 0; i < 20; ++i) {
         insert(str[i], BTree);
-        show(BTree);
+        // show(BTree);
     }
-    // show(BTree);
+    show(BTree);
     distory(BTree);
     return 0;
 }
