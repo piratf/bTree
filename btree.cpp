@@ -72,7 +72,7 @@ int insert_key_in_order(keyT item, Node *&node) {
     return i;
 }
 
-int insert(keyT item, Node *&node, bool up = false) {
+int insert(keyT item, Node *node, bool up = false) {
     if (!item) {
         return 0;
     }
@@ -134,6 +134,7 @@ int insert(keyT item, Node *&node, bool up = false) {
         // showNode(node);
         // cout << BTree -> ptr[1] << BTree -> ptr[0] << endl;
         node -> parent -> ptr[posInParent + 1] = right;
+        right -> parent = node -> parent;
         node -> key[mid] = 0;
         // 接下来向右节点放入元素
         printf("insert into right\n");
