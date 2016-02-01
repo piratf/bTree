@@ -22,12 +22,25 @@ struct Node {
 
 Node *BTree = nullptr;
 
-void showNode(Node *&node, unsigned int level = 0) {
+void showNode(Node *node) {
+    printf("signle node: %d - ", node -> cnt);
+    for (unsigned int i = 0; i <= node ->cnt; ++i) {
+        cout << node -> key[i] << ' ';
+    }
+    putchar(10);
+    for (unsigned int i = 0; i <= node ->cnt; ++i) {
+        cout << node -> ptr[i] << ' ';
+    }
+    printf("- %p\n", (void*)node);
+}
+
+void _show( Node *node, unsigned int level = 1) {
     printf("node: %d - ", node -> cnt);
     for (unsigned int i = 0; i < node ->cnt; ++i) {
         cout << node -> key[i] << ' ';
     }
-    printf("- %p\n", (void*)node);
+    printf("- %p - parent: %p\n", (void*)node, (void*)node -> parent);
+    // cout << "address of parent " << &node -> parent << endl;
     for (unsigned int i = 0; i <= node ->cnt; ++i) {
         cout << node -> ptr[i] << ' ';
     }
@@ -36,13 +49,13 @@ void showNode(Node *&node, unsigned int level = 0) {
     // printf("- LEVEL%d\n", level);
     for (unsigned int i = 0; node -> ptr[i] && i <= node -> cnt; ++i) {
         printf("----- LEVEL%d ------\n", level);
-        showNode(node -> ptr[i], level + 1);
+        _show(node -> ptr[i], level + 1);
     }
 }
 
-int show(Node *&node, unsigned int level = 0) {
+int show( Node *node, unsigned int level = 0) {
     puts("=========================== start =========================");
-    showNode(node);
+    _show(node);
     return 0;
 }
 
@@ -109,20 +122,11 @@ int insert(keyT item, Node *node, bool up = false) {
             node -> parent = parent;
             parent -> ptr[0] = node;
         }
-        printf("new right node\n");
-        fflush(stdout);
         Node *right = new Node();
-        printf("get right node\n");
-        fflush(stdout);
-        right -> parent = node -> parent;
 
         // 先把 key 放进去
         unsigned int pos = insert_key_in_order(item, node);
-        printf("node: %d - ", node -> cnt);
-        for (unsigned int i = 0; i <= node ->cnt; ++i) {
-            cout << node -> key[i] << ' ';
-        }
-        printf("- %p\n", (void*)node);
+        // showNode(node);
 
         // 分裂成两半，mid 指向中间的 key
         unsigned int mid = node -> cnt >> 1;
@@ -133,9 +137,7 @@ int insert(keyT item, Node *node, bool up = false) {
         fflush(stdout);
         // showNode(node);
         // cout << BTree -> ptr[1] << BTree -> ptr[0] << endl;
-        node -> parent -> ptr[posInParent + 1] = right;
-        right -> parent = node -> parent;
-        node -> key[mid] = 0;
+        
         // 接下来向右节点放入元素
         printf("insert into right\n");
         fflush(stdout);
@@ -148,74 +150,31 @@ int insert(keyT item, Node *node, bool up = false) {
         }
         right -> ptr[i] = node -> ptr[mid];
         right -> cnt = M >> 1;
-        printf("node: %d - ", right -> cnt);
-        for (unsigned int i = 0; i < right ->cnt; ++i) {
-            cout << right -> key[i] << ' ';
-        }
-        printf("- %p\n", (void*)right);
-        // 重新设置 cnt 为 一半
-        node -> cnt = M >> 1;
-        printf("address = %p, cnt = %d\n", (void*)node, node -> cnt);
-        printf("address = %p, cnt = %d\n", (void*)right, right -> cnt);
-        // 最后 根节点指针指向 新的父节点
-        if (!node -> parent -> parent) {
-            BTree = node -> parent;
-        }
         // 反向重新连接 右节点拿过去的 子节点
-        for (int i = 0; i < (M >> 1); ++i) {
+        for (int i = 0; i < (M >> 1) + 1; ++i) {
             if (right -> ptr[i]) {
-                Node *tmp = right -> ptr[i];
-                tmp -> parent = right;
+                right -> ptr[i] -> parent = right;
             } else {
                 break;
             }
         }
+        node -> parent -> ptr[posInParent + 1] = right;
+        right -> parent = node -> parent;
+        node -> key[mid] = 0;
+        showNode(right);
+        // 重新设置 cnt 为 一半
+        node -> cnt = M >> 1;
+        // 最后 根节点指针指向 新的父节点
+        if (!node -> parent -> parent) {
+            BTree = node -> parent;
+        }
+        
         return pos >= (M - 1) ? pos - (M - 1) : pos;
     }
     // 未到达限制，可以继续插入
     else if (node ->cnt < M) {
-        // 可以直接插入新的元素
-        unsigned int i = 0;
-        // 是否出现插入，需要右移部分元素
-        bool moveFlag = false;
-        for (i = 0; node ->key[i] != 0 && i < node ->cnt; ++i) {
-            // 按顺序存放，插入
-            // 如果 可以放到 子节点中，就放到子节点中
-            if (item < node -> key[i]) {
-                // 如果是 分裂 挤上来的 key，就直接往里放，不再下放
-                if (!up && node -> ptr[i + 1]) {
-                    printf("down: %d\n", i);
-                    // 下放到子节点中
-                    return insert(item, node -> ptr[i]);
-                } else {
-                    moveFlag = true;
-                    break;
-                }
-            }
-        }
-        // 最后放入元素
-        // 如果可以放到子节点中，且已经有 key，不会重复往下放
-        if (!up && node -> ptr[i]) {
-            printf("down: %d\n", i);
-            return insert(item, node -> ptr[i]);
-        } else {
-            // 元素放到当前节点，先右移，保护元素
-            if (moveFlag) {
-                printf("move key\n");
-                fflush(stdout);
-                for (unsigned int j = node -> cnt; j > i; --j) {
-                    node -> key[j] = node -> key[j - 1];
-                }
-                for (unsigned int j = node -> cnt + 1; j > i; --j) {
-                    node -> ptr[j] = node -> ptr[j - 1];
-                }
-                printf("move ptr\n");
-                fflush(stdout);
-            }
-            node ->key[i] = item;
             ++(node ->cnt);
-            return i;
-        }
+            return insert_key_in_order(item, node);
     }
 }
 
