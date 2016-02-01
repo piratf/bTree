@@ -22,9 +22,21 @@ struct Node {
 
 Node *BTree = nullptr;
 
-void showNode(Node *node) {
+void showNodeOneMore(Node *node) {
     printf("signle node: %d - ", node -> cnt);
     for (unsigned int i = 0; i <= node ->cnt; ++i) {
+        cout << node -> key[i] << ' ';
+    }
+    putchar(10);
+    for (unsigned int i = 0; i <= node ->cnt; ++i) {
+        cout << node -> ptr[i] << ' ';
+    }
+    printf("- %p\n", (void*)node);
+}
+
+void showNode(Node *node) {
+    printf("signle node: %d - ", node -> cnt);
+    for (unsigned int i = 0; i < node ->cnt; ++i) {
         cout << node -> key[i] << ' ';
     }
     putchar(10);
@@ -182,7 +194,7 @@ int insert(keyT item, Node *node, bool up = false) {
         node -> parent -> ptr[posInParent + 1] = right;
         right -> parent = node -> parent;
         node -> key[mid] = 0;
-        showNode(right);
+        // showNode(right);
         // 重新设置 cnt 为 一半
         node -> cnt = M >> 1;
         // 最后 根节点指针指向 新的父节点
@@ -194,9 +206,20 @@ int insert(keyT item, Node *node, bool up = false) {
     }
     // 未到达限制，可以继续插入
     else if (node ->cnt < M) {
-            ++(node ->cnt);
-            return insert_key_in_order(item, node);
+        ++(node ->cnt);
+        return insert_key_in_order(item, node);
     }
+}
+
+bool push_back(keyT item, Node *node) {
+    if (!item || !node || node -> cnt >= M) {
+        showNode(node);
+        puts("push_back false.");
+        return false;
+    }
+    node -> key[node -> cnt] = item;
+    ++node -> cnt;
+    return true;
 }
 
 /**
@@ -237,11 +260,11 @@ int insert(keyT item, Node *node, bool up = false) {
     // 现在找到这个节点
     // 存在子节点，就要保护
     // 从该 key 的孩子中拿一个上来，节点个数不变
-    if (node -> ptr[flag + 1]) {
+    if (node -> ptr[flag] && node -> ptr[flag + 1]) {
         node -> key[flag] = node -> ptr[flag + 1] -> key[0];
         remove (node -> ptr[flag + 1] -> key[0], node -> ptr[flag + 1]);
     } else {
-        // 是子节点，不需要保护，直接删除
+        // 不需要保护，直接删除
         // 为了程序不出错，如果节点的 key 是 1 个，则直接删除这个子节点
         // 此时退化成二叉树
         if (node -> cnt == 1) {
@@ -261,8 +284,13 @@ int insert(keyT item, Node *node, bool up = false) {
         for (unsigned int i = flag + 1; i < node -> cnt; ++i) {
             node -> key[i - 1] = node -> key[i];
         }
+        // 左移指针域
+        for (unsigned int i = flag + 1; i < node -> cnt; ++i) {
+            node -> ptr[i] = node -> ptr[i+1];
+        }
         // 收缩 cnt
         --node -> cnt;
+        show(BTree);
         
         // 检查是否元素过少，如果是看是否可以左旋或右旋
         if (node -> cnt < (M >> 1)) {
@@ -292,7 +320,53 @@ int insert(keyT item, Node *node, bool up = false) {
                 remove(parent -> key[posInParent], parent);
                 // 会自动从右节点拿最左的 key 补充给 父节点
             } else {
-                // ass
+                // 如果两边都不能旋转，就合并
+                puts("merge here.");
+                // 左节点可以合并
+                if (posInParent > 0) {
+                    puts("merge left.");
+                    Node *left = parent -> ptr[posInParent - 1];
+                    // 先从父节点获取 key
+                    push_back(parent -> key[posInParent - 1], left);
+                    // 把右边的一起拿过来
+                    for (int i = 0; i < node -> cnt; ++i) {
+                        push_back(node -> key[i], left);
+                        left -> ptr[left -> cnt - 1] = node -> ptr[i];
+                    }
+                    // 清理当前被废弃的节点
+                    delete parent -> ptr[posInParent];
+                    parent -> ptr[posInParent] = nullptr;
+                    // 删除 父节点的 key
+                    if (1 == parent -> cnt) {
+                        delete BTree;
+                        BTree = node;
+                    } else {
+                        remove(parent -> key[posInParent - 1], parent);
+                    }
+                } else {
+                    // 合并右节点
+                    puts("merge right.");
+                    // showNode(node);
+                    Node *right = parent -> ptr[posInParent + 1];
+                    // 先从父节点获取 key
+                    push_back(parent -> key[posInParent], node);
+                    // 把右边的一起拿过来
+                    // show(BTree);
+                    for (int i = 0; i < right -> cnt; ++i) {
+                        push_back(right -> key[i], node);
+                        node -> ptr[node -> cnt - 1] = right -> ptr[i];
+                    }
+                    // 清理当前被废弃的节点
+                    delete parent -> ptr[posInParent + 1];
+                    parent -> ptr[posInParent + 1] = nullptr;
+                    // 删除 父节点的 key
+                    if (1 == parent -> cnt) {
+                        delete BTree;
+                        BTree = node;
+                    } else {
+                        remove(parent -> key[posInParent - 1], parent);
+                    }
+                }
             }
         }
     }
@@ -311,12 +385,12 @@ int insertTest() {
         insert(str[i], BTree);
         // show(BTree);
     }
-    show(BTree);
+    // show(BTree);
     remove('H', BTree);
     remove('T', BTree);
-    show(BTree);
     remove('R', BTree);
-
+    // show(BTree);
+    remove('E', BTree);
     show(BTree);
     distory(BTree);
     return 0;
