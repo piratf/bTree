@@ -64,10 +64,21 @@ int show( Node *node, unsigned int level = 0) {
     return 0;
 }
 
+/**
+ * [insert_key_in_order]
+ * 该函数不会修改 cnt 的值，需要手动修改
+ * @author piratf
+ * @param  item 
+ * @param  node 
+ * @return      插入位置
+ */
 unsigned int insert_key_in_order(keyT item, Node *&node) {
     bool moveFlag = false;
     unsigned int i = 0;
     for (i = 0; node ->key[i] != 0 && i < node ->cnt; ++i) {
+        if (item == node -> key[i]) {
+            return -1;
+        }
         // 按顺序存放，插入
         if (item < node -> key[i]) {
             moveFlag = true;
@@ -122,9 +133,7 @@ int insert(keyT item, Node *node, bool up = false) {
     if (!item) {
         return 0;
     }
-    cout << "insert: -> ";
-    cout << item << ' ';
-    cout << node -> cnt << endl;    
+    cout << "insert: -> " << item << ' ' << node -> cnt << endl;    
     if (!node) {
         printf("got an empty node, new it.\n");
         fflush(stdout);
@@ -164,22 +173,15 @@ int insert(keyT item, Node *node, bool up = false) {
 
         // 先把 key 放进去
         unsigned int pos = insert_key_in_order(item, node);
-        // showNode(node);
-
         // 分裂成两半，mid 指向中间的 key
         unsigned int mid = node -> cnt >> 1;
         // 把中间元素放到 parent 中
-        // 在这里，父节点中插入了新的元素，其 cnt 已经加 1，可以直接连接 right
         int posInParent = insert(node -> key[mid], node ->parent, true);
-        printf("address = %p, pos = %d\n", (void*)node, posInParent);
-        fflush(stdout);
-        // showNode(node);
-        // cout << BTree -> ptr[1] << BTree -> ptr[0] << endl;
         
         // 接下来向右节点放入元素
         printf("insert into right\n");
         fflush(stdout);
-        // 右半边写到右边元素
+        // 右半边 key 和 ptr 写到右边元素
         ++mid;
         int i = 0;
         for (; mid <= node -> cnt; ++mid, ++i) {
@@ -199,14 +201,12 @@ int insert(keyT item, Node *node, bool up = false) {
         node -> parent -> ptr[posInParent + 1] = right;
         right -> parent = node -> parent;
         node -> key[mid] = 0;
-        // showNode(right);
         // 重新设置 cnt 为 一半
         node -> cnt = M >> 1;
         // 最后 根节点指针指向 新的父节点
         if (!node -> parent -> parent) {
             BTree = node -> parent;
         }
-        
         return pos >= (M - 1) ? pos - (M - 1) : pos;
     }
     // 未到达限制，可以继续插入
@@ -228,7 +228,7 @@ bool push_back(keyT item, Node *node) {
 }
 
 /**
- * 删除元素
+ * 删除元素，处理旋转，合并等情况
  * @author piratf
  * @param  item 
  * @param  node 
@@ -308,22 +308,22 @@ bool push_back(keyT item, Node *node) {
             if (posInParent < parent -> cnt && parent -> ptr[posInParent + 1] -> cnt > (M >> 1)) {
                 Node *right = parent -> ptr[posInParent + 1];
                 // 先拿到父节点的 key，放到自己的当前位置
-                // 因为是 父节点的 key，所以一定是 最后一个
+                // 因为是 父节点的 key，所以一定放在最后一个
                 node -> key[node -> cnt] = parent -> key[posInParent];
                 ++node -> cnt;
                 // 删除 父节点 被拿走的 key
-                remove(parent -> key[posInParent], parent);
                 // 会自动从右节点拿最左的 key 补充给 父节点
+                remove(parent -> key[posInParent], parent);
             } else if (posInParent > 0 && parent -> ptr[posInParent - 1] -> cnt > (M >> 1)) {
                 // 左节点可以右旋
                 Node *left = parent -> ptr[posInParent - 1];
                 // 先拿到父节点的 key，放到自己的当前位置
-                // 因为是 父节点的 key，所以一定是 最后一个
+                // 因为是 父节点的 key，所以一定放在最后一个
                 node -> key[node -> cnt] = parent -> key[posInParent];
                 ++node -> cnt;
                 // 删除 父节点 被拿走的 key
-                remove(parent -> key[posInParent], parent);
                 // 会自动从右节点拿最左的 key 补充给 父节点
+                remove(parent -> key[posInParent], parent);
             } else {
                 // 如果两边都不能旋转，就合并
                 puts("merge here.");
@@ -351,12 +351,10 @@ bool push_back(keyT item, Node *node) {
                 } else {
                     // 合并右节点
                     puts("merge right.");
-                    // showNode(node);
                     Node *right = parent -> ptr[posInParent + 1];
                     // 先从父节点获取 key
                     push_back(parent -> key[posInParent], node);
                     // 把右边的一起拿过来
-                    // show(BTree);
                     for (int i = 0; i < right -> cnt; ++i) {
                         push_back(right -> key[i], node);
                         node -> ptr[node -> cnt - 1] = right -> ptr[i];
@@ -388,13 +386,11 @@ int insertTest() {
     const char *str = "CNGAHEKQMFWLTZDPRXYS";
     for (int i = 0; i < 20; ++i) {
         insert(str[i], BTree);
-        // show(BTree);
     }
-    // show(BTree);
+    show(BTree);
     remove('H', BTree);
     remove('T', BTree);
     remove('R', BTree);
-    // show(BTree);
     remove('E', BTree);
     show(BTree);
     distory(BTree);
