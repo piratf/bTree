@@ -178,6 +178,110 @@ int insert(keyT item, Node *node, bool up = false) {
     }
 }
 
+/**
+ * 删除元素
+ * @author piratf
+ * @param  item 
+ * @param  node 
+ * @return      
+ */
+ bool remove(keyT item, Node *&node) {
+    if (!item || !node) {
+        return false;
+    }
+    cout << "remove " << item << endl;
+    // 查找元素的位置
+    int flag = -1;
+    unsigned int i = 0;
+    for (; i < node -> cnt; ++i) {
+        // 找到该元素
+        if (item == node -> key[i]) {
+            flag = i;
+        }
+        // 到子节点中找
+        if (item < node -> key[i] && node -> ptr[i]) {
+            return remove(item, node -> ptr[i]);
+        }
+    }
+    // 最后一个孩子
+    if (-1 == flag) {
+        return remove(item, node -> ptr[i]);
+    }
+    // 没找到节点
+    if (-1 == flag) {
+        return false;
+    }
+    printf("flag = %d\n", flag);
+    fflush(stdout);
+    // 现在找到这个节点
+    // 存在子节点，就要保护
+    // 从该 key 的孩子中拿一个上来，节点个数不变
+    if (node -> ptr[flag + 1]) {
+        node -> key[flag] = node -> ptr[flag + 1] -> key[0];
+        remove (node -> ptr[flag + 1] -> key[0], node -> ptr[flag + 1]);
+    } else {
+        // 是子节点，不需要保护，直接删除
+        // 为了程序不出错，如果节点的 key 是 1 个，则直接删除这个子节点
+        // 此时退化成二叉树
+        if (node -> cnt == 1) {
+            Node *parent = node -> parent;
+            unsigned int i = 0;
+            for (; i < parent -> cnt; ++i) {
+                if (parent -> key[i] > node -> key[0]) {
+                    delete parent -> ptr[i];
+                    parent -> ptr[i] = nullptr;
+                }
+            }
+            // 一定存在，如果没找到，就删最后一个
+            delete parent -> ptr[i];
+            parent -> ptr[i] = nullptr;
+        }
+        // 左移元素
+        for (unsigned int i = flag + 1; i < node -> cnt; ++i) {
+            node -> key[i - 1] = node -> key[i];
+        }
+        // 收缩 cnt
+        --node -> cnt;
+        
+        // 检查是否元素过少，如果是看是否可以左旋或右旋
+        if (node -> cnt < (M >> 1)) {
+            puts("element not enough in this node.");
+            // 查找当前节点在父节点中的位置
+            Node *&parent = node -> parent;
+            int posInParent = find_index_in_parent(node);
+            printf("posInParent: %d\n", posInParent);
+            // 如果右边的节点存在且可以左旋
+            if (posInParent < parent -> cnt && parent -> ptr[posInParent + 1] -> cnt > (M >> 1)) {
+                Node *&right = parent -> ptr[posInParent + 1];
+                // 先拿到父节点的 key，放到自己的当前位置
+                // 因为是 父节点的 key，所以一定是 最后一个
+                node -> key[node -> cnt] = parent -> key[posInParent];
+                ++node -> cnt;
+                // 删除 父节点 被拿走的 key
+                remove(parent -> key[posInParent], parent);
+                // 从右节点拿最左的 key 补充给 父节点
+                insert(right -> key[0], parent, true);
+                // 删除右节点最左的 key
+                remove(right -> key[0], right);
+            } else if (posInParent > 0 && parent -> ptr[posInParent - 1] -> cnt > (M >> 1)) {
+                // 左节点可以右旋
+                Node *&left = parent -> ptr[posInParent - 1];
+                // 先拿到父节点的 key，放到自己的当前位置
+                // 因为是 父节点的 key，所以一定是 最后一个
+                node -> key[node -> cnt] = parent -> key[posInParent];
+                ++node -> cnt;
+                // 删除 父节点 被拿走的 key
+                remove(parent -> key[posInParent], parent);
+                // 从右节点拿最左的 key 补充给 父节点
+                insert(left -> key[0], parent, true);
+                // 删除右节点最左的 key
+                remove(left -> key[0], left);
+            }
+        }
+    }
+    return true;
+}
+
 void distory(Node *&node) {
     delete node ->parent;
     node ->parent = nullptr;
