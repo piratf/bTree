@@ -85,11 +85,32 @@ int insert_key_in_order(keyT item, Node *&node) {
     return i;
 }
 
+/**
+ * [find_index_in_parent description]
+ * @author piratf
+ * @param  node 
+ * @return      返回子节点在父节点中 ptr 的下标，出错返回 -1
+ */
+ unsigned int find_index_in_parent(Node *&node) {
+    if (!node -> parent || node -> cnt < 1) {
+        return -1;
+    }
+    Node *&parent = node -> parent;
+    unsigned int i = 0;
+    for (; i < parent -> cnt; ++i) {
+        if (parent -> key[i] > node -> key[0]) {
+            return i;
+        }
+    }
+    return i;
+}
+
 int insert(keyT item, Node *node, bool up = false) {
     if (!item) {
         return 0;
     }
-    cout << item << endl;
+    cout << "insert: -> ";
+    cout << item << ' ';
     cout << node -> cnt << endl;    
     if (!node) {
         printf("got an empty node, new it.\n");
@@ -185,7 +206,7 @@ int insert(keyT item, Node *node, bool up = false) {
  * @param  node 
  * @return      
  */
- bool remove(keyT item, Node *&node) {
+ bool remove(keyT item, Node *node) {
     if (!item || !node) {
         return false;
     }
@@ -247,35 +268,31 @@ int insert(keyT item, Node *node, bool up = false) {
         if (node -> cnt < (M >> 1)) {
             puts("element not enough in this node.");
             // 查找当前节点在父节点中的位置
-            Node *&parent = node -> parent;
+            Node *parent = node -> parent;
             int posInParent = find_index_in_parent(node);
             printf("posInParent: %d\n", posInParent);
             // 如果右边的节点存在且可以左旋
             if (posInParent < parent -> cnt && parent -> ptr[posInParent + 1] -> cnt > (M >> 1)) {
-                Node *&right = parent -> ptr[posInParent + 1];
+                Node *right = parent -> ptr[posInParent + 1];
                 // 先拿到父节点的 key，放到自己的当前位置
                 // 因为是 父节点的 key，所以一定是 最后一个
                 node -> key[node -> cnt] = parent -> key[posInParent];
                 ++node -> cnt;
                 // 删除 父节点 被拿走的 key
                 remove(parent -> key[posInParent], parent);
-                // 从右节点拿最左的 key 补充给 父节点
-                insert(right -> key[0], parent, true);
-                // 删除右节点最左的 key
-                remove(right -> key[0], right);
+                // 会自动从右节点拿最左的 key 补充给 父节点
             } else if (posInParent > 0 && parent -> ptr[posInParent - 1] -> cnt > (M >> 1)) {
                 // 左节点可以右旋
-                Node *&left = parent -> ptr[posInParent - 1];
+                Node *left = parent -> ptr[posInParent - 1];
                 // 先拿到父节点的 key，放到自己的当前位置
                 // 因为是 父节点的 key，所以一定是 最后一个
                 node -> key[node -> cnt] = parent -> key[posInParent];
                 ++node -> cnt;
                 // 删除 父节点 被拿走的 key
                 remove(parent -> key[posInParent], parent);
-                // 从右节点拿最左的 key 补充给 父节点
-                insert(left -> key[0], parent, true);
-                // 删除右节点最左的 key
-                remove(left -> key[0], left);
+                // 会自动从右节点拿最左的 key 补充给 父节点
+            } else {
+                // ass
             }
         }
     }
@@ -294,6 +311,12 @@ int insertTest() {
         insert(str[i], BTree);
         // show(BTree);
     }
+    show(BTree);
+    remove('H', BTree);
+    remove('T', BTree);
+    show(BTree);
+    remove('R', BTree);
+
     show(BTree);
     distory(BTree);
     return 0;
