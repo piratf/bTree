@@ -22,18 +22,6 @@ struct Node {
 
 Node *BTree = nullptr;
 
-void showNodeOneMore(Node *node) {
-    printf("signle node: %d - ", node -> cnt);
-    for (unsigned int i = 0; i <= node ->cnt; ++i) {
-        cout << node -> key[i] << ' ';
-    }
-    putchar(10);
-    for (unsigned int i = 0; i <= node ->cnt; ++i) {
-        cout << node -> ptr[i] << ' ';
-    }
-    printf("- %p\n", (void*)node);
-}
-
 void showNode(Node *node) {
     printf("signle node: %d - ", node -> cnt);
     for (unsigned int i = 0; i < node ->cnt; ++i) {
@@ -52,26 +40,31 @@ void _show( Node *node, unsigned int level = 1) {
         cout << node -> key[i] << ' ';
     }
     printf("- %p - parent: %p\n", (void*)node, (void*)node -> parent);
-    // cout << "address of parent " << &node -> parent << endl;
     for (unsigned int i = 0; i <= node ->cnt; ++i) {
         cout << node -> ptr[i] << ' ';
     }
     fflush(stdout);
     putchar(10);
-    // printf("- LEVEL%d\n", level);
     for (unsigned int i = 0; node -> ptr[i] && i <= node -> cnt; ++i) {
         printf("----- LEVEL%d ------\n", level);
         _show(node -> ptr[i], level + 1);
     }
 }
 
+/**
+ * 打印 B 树
+ * @author piratf
+ * @param  node  
+ * @param  level 当前层树
+ * @return       正常退出返回 0
+ */
 int show( Node *node, unsigned int level = 0) {
     puts("=========================== start =========================");
     _show(node);
     return 0;
 }
 
-int insert_key_in_order(keyT item, Node *&node) {
+unsigned int insert_key_in_order(keyT item, Node *&node) {
     bool moveFlag = false;
     unsigned int i = 0;
     for (i = 0; node ->key[i] != 0 && i < node ->cnt; ++i) {
@@ -98,7 +91,7 @@ int insert_key_in_order(keyT item, Node *&node) {
 }
 
 /**
- * [find_index_in_parent description]
+ * [find_index_in_parent]
  * @author piratf
  * @param  node 
  * @return      返回子节点在父节点中 ptr 的下标，出错返回 -1
@@ -117,6 +110,14 @@ int insert_key_in_order(keyT item, Node *&node) {
     return i;
 }
 
+/**
+ * 向 B 树中插入节点，处理分裂的情况
+ * @author piratf
+ * @param  item 
+ * @param  node 
+ * @param  up   是否是分类后向上添加的节点，如果是则不再向下递归
+ * @return      最终的插入位置，出错返回 -1
+ */
 int insert(keyT item, Node *node, bool up = false) {
     if (!item) {
         return 0;
@@ -129,9 +130,13 @@ int insert(keyT item, Node *node, bool up = false) {
         fflush(stdout);
         node = new Node();
     }
+    // 向下递归，尽量往子节点放
     if (!up) {
         unsigned int i = 0;
         for (; i < node -> cnt; ++i) {
+            if (item == node -> key[i]) {
+                return -1;
+            }
             if (item < node -> key[i]) {
                 if (node -> ptr[i + 1]) {
                     printf("down: %d\n", i);
